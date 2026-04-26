@@ -47,5 +47,14 @@ app.get('/debug/columns/:table', async (req) => {
   return rows
 })
 
+app.get('/debug/sample', async () => {
+  const { rows } = await app.pg.query(`
+    SELECT m.id, m.status, m.utc_date, m.season_id, m.home_team_id, m.away_team_id
+    FROM matches m
+    LIMIT 3
+  `)
+  return rows
+})
+
 const port = Number(process.env.PORT) || 3000
 await app.listen({ port, host: '0.0.0.0' })
