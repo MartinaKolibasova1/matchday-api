@@ -56,5 +56,26 @@ app.get('/debug/sample', async () => {
   return rows
 })
 
+app.get('/debug/joins', async () => {
+  const { rows } = await app.pg.query(`
+    SELECT
+      m.id AS match_id,
+      m.season_id,
+      s.id AS season_found,
+      s.competition_id,
+      c.id AS competition_found,
+      c.name AS competition_name,
+      ht.id AS home_team_found,
+      at.id AS away_team_found
+    FROM matches m
+    LEFT JOIN seasons s      ON s.id  = m.season_id
+    LEFT JOIN competitions c ON c.id  = s.competition_id
+    LEFT JOIN teams ht       ON ht.id = m.home_team_id
+    LEFT JOIN teams at       ON at.id = m.away_team_id
+    LIMIT 3
+  `)
+  return rows
+})
+
 const port = Number(process.env.PORT) || 3000
 await app.listen({ port, host: '0.0.0.0' })
