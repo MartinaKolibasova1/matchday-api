@@ -16,6 +16,7 @@ await app.register(cors, {
 await app.register(pg, {
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
+  options: '-c search_path=public',
 })
 
 await app.register(matchesRoutes,      { prefix: '/api/matches' })
@@ -24,6 +25,27 @@ await app.register(competitionsRoutes, { prefix: '/api/competitions' })
 await app.register(refereesRoutes,     { prefix: '/api/referees' })
 
 app.get('/health', async () => ({ status: 'ok' }))
+
+app.get('/debug/tables', async () => {
+  const { rows } = await app.pg.query(`
+    SELECT table_schema, table_name
+    FROM information_schema.tables
+    WHERE table_type = 'BASE TABLE'
+      AND table_schema NOT IN ('pg_catalog', 'information_schema')
+    ORDER BY table_schema, table_name
+  `)
+  return rows
+})
+
+app.get('/debug/columns/:table', async (req) => {
+  const { rows } = await app.pg.query(`
+    SELECT column_name, data_type
+    FROM information_schema.columns
+    WHERE table_name = $1
+    ORDER BY ordinal_position
+  `, [req.params.table])
+  return rows
+})
 
 const port = Number(process.env.PORT) || 3000
 await app.listen({ port, host: '0.0.0.0' })
